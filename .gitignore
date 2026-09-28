@@ -1,3 +1,6 @@
+# My ignored files and folders
+trash/
+
 # Created by https://www.toptal.com/developers/gitignore/api/c,c++,cmake,visualstudio,visualstudiocode,clion+all,vcpkg
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,c++,cmake,visualstudio,visualstudiocode,clion+all,vcpkg
 

@@ -22,7 +22,8 @@ In the 2013 version of the game, the fix was found in FUN_ , in remastered the f
 
 ## Goals
 
-- [ ] Create a dll file loaded by the game d8input.dll
+- [x] Added base project files
+- [x] Create a dll
 - [ ] Make it load the real d8input.dll
 - [ ] Try modifying a FUN_ function I know what is doing
 - [ ] Implement the new analog function
