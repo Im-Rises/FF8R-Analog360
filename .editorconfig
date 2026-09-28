@@ -1,0 +1,19 @@
+# top-most EditorConfig file
+root = true
+
+# Default rules for all files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Override for specific web/config file types
+[*.{js,ts,json,html,css,scss,yml,yaml}]
+indent_size = 2
+
+# Makefiles typically require hard tabs
+[Makefile]
+indent_style = tab

@@ -1,0 +1,20 @@
+# Handle all text files safely and force LF in the repository
+* text=auto eol=lf
+
+# Explicitly force LF for source and config files
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+.editorconfig text eol=lf
+.clang-format text eol=lf
+.clang-tidy text eol=lf
+
+# Force LF for scripts (otherwise they fail to run in Docker/Linux)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Keep binary files untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

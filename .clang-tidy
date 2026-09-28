@@ -1,0 +1,27 @@
+# Enable modern C++, bug-prone, and performance checks
+Checks: >
+    -*,
+    bugprone-*,
+    cert-*,
+    clang-analyzer-*,
+    cppcoreguidelines-*,
+    modernize-*,
+    performance-*,
+    readability-*,
+    -modernize-use-trailing-return-type,
+    -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+    -readability-braces-around-statements
+
+# Treat warnings as errors to enforce clean code
+WarningsAsErrors: '*'
+
+# Naming convention settings
+CheckOptions:
+    - key:             readability-identifier-naming.ClassCase
+      value:           CamelCase
+    - key:             readability-identifier-naming.VariableCase
+      value:           camelBack
+    - key:             readability-identifier-naming.FunctionCase
+      value:           camelBack
+    - key:             readability-identifier-naming.ParameterCase
+      value:           camelBack
