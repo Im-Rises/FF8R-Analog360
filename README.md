@@ -24,10 +24,24 @@ In the 2013 version of the game, the fix was found in FUN_ , in remastered the f
 
 - [x] Added base project files
 - [x] Create a dll
-- [ ] Make it load the real d8input.dll
+- [x] Make it load the real d8input.dll
 - [ ] Try modifying a FUN_ function I know what is doing
 - [ ] Implement the new analog function
 - [ ] Inject the new analog function with the custom d8input.dll
 - [ ] Test the game...
 - [ ] Iterate...
 
+## Documentation
+
+- FFNx: <https://github.com/julianxhokaxhiu/FFNx>
+
+- FFVIII Demastered: <https://github.com/MaKiPL/FF8_demaster>
+
+## Contributors
+
+Quentin MOREL:
+
+- @Im-Rises
+- <https://github.com/Im-Rises>
+
+[![GitHub contributors](https://contrib.rocks/image?repo=Im-Rises/FF8R-Analog360)](https://github.com/Im-Rises/FF8R-Analog360/graphs/contributors)
