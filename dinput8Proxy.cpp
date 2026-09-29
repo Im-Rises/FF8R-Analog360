@@ -1,5 +1,4 @@
 #include <windows.h>
-#include <fstream>
 
 static HMODULE g_realDll = nullptr;
 
@@ -58,13 +57,7 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
-        std::ofstream myDllTestFile("dllTestFile.txt");
-        if (myDllTestFile.is_open())
-        {
-            myDllTestFile << "If you read this the dll was loaded but maybe it crashed after...";
-        }
-
-        myDllTestFile.close();
+        // put call to injetion here
     }
 
     return TRUE;

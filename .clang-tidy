@@ -1,27 +1,47 @@
-# Enable modern C++, bug-prone, and performance checks
+# Clang-Tidy
+# the checks that forbid those by design are disabled below.
 Checks: >
     -*,
     bugprone-*,
     cert-*,
     clang-analyzer-*,
     cppcoreguidelines-*,
+    misc-*,
     modernize-*,
     performance-*,
     readability-*,
-    -modernize-use-trailing-return-type,
+    -bugprone-easily-swappable-parameters,
+    -cert-dcl50-cpp,
+    -cppcoreguidelines-avoid-c-arrays,
+    -cppcoreguidelines-avoid-magic-numbers,
+    -cppcoreguidelines-avoid-non-const-global-variables,
     -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
-    -readability-braces-around-statements
-
-# Treat warnings as errors to enforce clean code
+    -cppcoreguidelines-pro-bounds-constant-array-index,
+    -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+    -cppcoreguidelines-pro-type-reinterpret-cast,
+    -cppcoreguidelines-pro-type-vararg,
+    -misc-include-cleaner,
+    -misc-use-anonymous-namespace,
+    -modernize-avoid-c-arrays,
+    -modernize-use-trailing-return-type,
+    -readability-braces-around-statements,
+    -readability-identifier-length,
+    -readability-implicit-bool-conversion,
+    -performance-no-int-to-ptr,
+    -readability-magic-numbers
 WarningsAsErrors: '*'
-
-# Naming convention settings
+HeaderFilterRegex: '.*'
+FormatStyle: file
 CheckOptions:
-    - key:             readability-identifier-naming.ClassCase
-      value:           CamelCase
-    - key:             readability-identifier-naming.VariableCase
-      value:           camelBack
-    - key:             readability-identifier-naming.FunctionCase
-      value:           camelBack
-    - key:             readability-identifier-naming.ParameterCase
-      value:           camelBack
+    - { key: readability-identifier-naming.ClassCase,              value: CamelCase }
+    - { key: readability-identifier-naming.StructCase,             value: CamelCase }
+    - { key: readability-identifier-naming.FunctionCase,           value: camelBack }
+    - { key: readability-identifier-naming.FunctionIgnoredRegexp,  value: '^(DllMain|DirectInput8Create|DllCanUnloadNow|DllGetClassObject|DllRegisterServer|DllUnregisterServer)$' }
+    - { key: readability-identifier-naming.VariableCase,           value: camelBack }
+    - { key: readability-identifier-naming.ParameterCase,          value: camelBack }
+    - { key: readability-identifier-naming.GlobalVariableCase,     value: camelBack }
+    - { key: readability-identifier-naming.GlobalVariablePrefix,   value: g_ }
+    - { key: readability-identifier-naming.ConstexprVariableCase,  value: UPPER_CASE }
+    - { key: readability-identifier-naming.ConstexprVariablePrefix, value: '' }
+    - { key: readability-identifier-naming.MacroDefinitionCase,    value: UPPER_CASE }
+    - { key: readability-identifier-naming.EnumConstantCase,       value: CamelCase }
