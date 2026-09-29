@@ -1,6 +1,13 @@
+#include "logger.h"
+
+#include <cstring>
 #include <windows.h>
 
 static HMODULE g_realDll = nullptr;
+constexpr auto APP_NAME_EFIGS = "FFVIII_EFIGS.dll";
+constexpr auto APP_NAME_JP = "FFVIII_JP.dll";
+constexpr auto CONSOLE_NAME = "FF8R-Analog360 - debug";
+constexpr auto CONSOLE_PREFIX_MESSAGE = "[squall360]";
 
 static FARPROC getRealFunction(const char* name)
 {
@@ -53,11 +60,24 @@ extern "C"
     }
 }
 
+static bool isGameProcess()
+{
+    return GetModuleHandleA(APP_NAME_EFIGS) != nullptr
+        || GetModuleHandleA(APP_NAME_JP) != nullptr;
+}
+
 BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
-        // put call to injetion here
+        if (isGameProcess())
+        {
+            logInit(CONSOLE_NAME, CONSOLE_PREFIX_MESSAGE);
+
+            logPrint("FFVIII-Analog360 - Started");
+
+            logPrint("FFVIII-Analog360 - Patched");
+        }
     }
 
     return TRUE;

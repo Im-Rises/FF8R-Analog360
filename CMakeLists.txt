@@ -26,7 +26,7 @@ if(MSVC)
     endif()
 endif()
 
-add_library(${DLL_OUTPUT_NAME} SHARED dinput8Proxy.cpp dinput8.def)
+add_library(${DLL_OUTPUT_NAME} SHARED dinput8Proxy.cpp dinput8.def logger.cpp)
 
 if (MINGW)
     target_link_options(${DLL_OUTPUT_NAME} PRIVATE -static -Wl,--enable-stdcall-fixup)
