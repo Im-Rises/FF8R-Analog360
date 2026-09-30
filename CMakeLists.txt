@@ -36,4 +36,4 @@ endif ()
 
 set_target_properties(${DLL_OUTPUT_NAME} PROPERTIES PREFIX "")
 
-#target_link_libraries(${DLL_OUTPUT_NAME} PRIVATE xinput9_1_0)
+target_link_libraries(${DLL_OUTPUT_NAME} PRIVATE xinput9_1_0)
