@@ -56,7 +56,7 @@ static void pollPad()
 
 static bool isCallToGetAnalog(const uintptr_t callAddress)
 {
-    // Call address
+    // Read the raw bytes of the instruction at this address
     const auto* bytes = reinterpret_cast<const uint8_t*>(callAddress);
 
     // Call Opcode check
@@ -82,7 +82,7 @@ static bool isCallToGetAnalog(const uintptr_t callAddress)
 
 static bool patchCallToGetAnalog(const uintptr_t callAddress, const uintptr_t hookAddress)
 {
-    // Call address
+    // Read the raw bytes of the instruction at this address
     auto* bytes = reinterpret_cast<uint8_t*>(callAddress);
 
     // Make the 5 bytes of the CALL writable

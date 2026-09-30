@@ -1,0 +1,13 @@
+name: Format
+
+on: [push, pull_request]
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: pip install clang-format==18.*
+      - name: Check formatting
+        run: clang-format --dry-run --Werror *.cpp *.h

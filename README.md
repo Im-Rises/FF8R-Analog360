@@ -2,6 +2,8 @@
 
 A mod for FFVIII Remastered that enables full 360° analog movement, based on FFNx’s Analog 360° patch.
 
+[![Build](https://github.com/Im-Rises/FF8R-Analog360/actions/workflows/build.yml/badge.svg)](https://github.com/Im-Rises/FF8R-Analog360/actions/workflows/build.yml)
+
 ## Context
 
 FFVIII Remastered (2019) is a remaster of the PC version with new character models and HD assets.

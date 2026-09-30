@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (x86)
+        run: cmake -B build -A Win32
+
+      - name: Build (Release)
+        run: cmake --build build --config Release
+
+      - name: Set up MSVC tools (for dumpbin)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: Check that the DLL has no VC++ runtime dependency
+        shell: pwsh
+        run: |
+          $deps = dumpbin /dependents build\Release\dinput8.dll | Out-String
+          Write-Output $deps
+          if ($deps -match 'VCRUNTIME|MSVCP') {
+            Write-Error "dinput8.dll depends on the VC++ runtime: static CRT is not applied"
+            exit 1
+          }
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: dinput8-x86-release
+          path: build/Release/dinput8.dll
