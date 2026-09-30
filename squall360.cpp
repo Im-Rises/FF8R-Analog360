@@ -18,12 +18,19 @@ static constexpr uint32_t RVA_GET_ANALOG = 0x31EB50; // FUN_1031EB50
 // Addresses of the Calls to FUN_1031EB50 to replace
 static constexpr uint32_t EFIGS_RVA_CALL_SITES[] = {
     /*
-     * Field function FUN_10290770, it calls FUN_1031EB50 to check if we use analog values
-     * then read the x and y analog values
+     * The RVA below call are calls to FUN_1031EB50, the first call check if we use analog values and the others
+     * read the x and y values of the joysticks.
      */
+
+    // Field function FUN_10290770
     0x291659, // analog test check if different of -1 (type 2)
     0x2918CB, // lX (type 2)
     0x291927, // lY (type 3)
+    // World map (FUN_10929600)
+    0x929854, // lX (type 2)
+    0x9298A3, // lY (type 3)
+    0x9298F2, // rX (type 0)
+    0x929944, // rY (type 1)
 };
 
 // RVA of DAT_116cb5e0
@@ -109,8 +116,6 @@ static bool patchCallToGetAnalog(const uintptr_t callAddress, const uintptr_t ho
 // Function that will be used to replace FUN_1031EB50 (declared like in Ghidra)
 static void __cdecl analogHook(uint32_t* ctx)
 {
-    logPrint("Calling analog hook");
-
     // Fetching the data from the emulated stack
     const auto* stack = *reinterpret_cast<uint8_t**>(g_gameBaseAddress + RVA_EMU_STACK_PTR);
     const uint32_t esp = ctx[0xB];

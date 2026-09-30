@@ -8,16 +8,19 @@ A mod for FFVIII Remastered that enables full 360° analog movement, based on FF
 
 FFVIII Remastered (2019) is a remaster of the PC version with new character models and HD assets.
 
-The remastered is based on the 2013 version which is the port of the original PS1 code of the game. The analog values of the game aren't read as
-the function which is supposed to read them returns -1, meaning we're not using a joystick.
-So by default the game will read only the d-pad values.
-The Remastered has the same problem, the same code still exists, but it was translated from x86 to C and is now in `FFVIII_EFIGS.dll`.
+The Remastered is based on the 2013 PC version, itself a port of the original PlayStation game. The engine still
+contains the PlayStation analog movement code, but on PC the function that reads the analog stick always returns -1 ("no
+analog controller"), so that code is never used. Instead, the stick is converted into D-pad inputs, which is why
+characters can only move in 8 directions, always at full speed.
+The Remastered has the same problem, the same code still exists, but it was translated from x86 to C and is now in
+`FFVIII_EFIGS.dll`.
 
 This project is a port of the patch from the 2013 version to the remastered.
 
 ## The fix
 
-The fix follows the same logic as the 2013 FFNx patch. I hook new functions to the original game analog reading functions for the game engine to handle the analog values.
+The fix follows the same logic as the 2013 FFNx patch. I hook new functions to the original game analog reading
+functions for the game engine to handle the analog values.
 
 ## How to build
 
@@ -35,11 +38,12 @@ You'll have to put the `dinput8.dll` file in the game root folder.
 - [x] Added base project files
 - [x] Create a dll
 - [x] Make it load the real dinput8.dll
-- [ ] Verify the call sites in FFVIII_EFIGS.dll
-- [ ] Implement the new analog function
-- [ ] Inject the new analog function with the custom dinput8.dll
-- [ ] Test the game...
-- [ ] Iterate...
+- [x] Verify the call sites in FFVIII_EFIGS.dll
+- [x] Implement the new analog function
+- [x] Inject the new analog function with the custom dinput8.dll
+- [x] Test the game...
+- [ ] Add world support
+- [ ] Clean the hook function
 - [ ] Implement the fix for JP version
 
 ## Contributors
@@ -59,7 +63,8 @@ Quentin MOREL:
 ## Documentation
 
 - [FFVIII Demastered](https://github.com/MaKiPL/FF8_demaster) — another FFVIII Remastered mod, useful reference
-- [Ghidra](https://github.com/NationalSecurityAgency/ghidra) — reverse engineering tool used to analyse `FFVIII_EFIGS.dll`
+- [Ghidra](https://github.com/NationalSecurityAgency/ghidra) — reverse engineering tool used to analyse
+  `FFVIII_EFIGS.dll`
 - [x64dbg](https://github.com/x64dbg/x64dbg) (x32dbg) — debugger used to inspect the game at runtime
 
 ## License

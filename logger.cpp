@@ -15,7 +15,7 @@ constexpr int MESSAGE_SIZE = 512;
 constexpr int LINE_SIZE = PREFIX_SIZE + 1 + MESSAGE_SIZE + 2; // préfixe + ' ' + message + '\n' + '\0'
 
 char g_prefix[PREFIX_SIZE]{};
-}
+} // namespace
 
 void logInit(const char* consoleName, const char* prefix)
 {
