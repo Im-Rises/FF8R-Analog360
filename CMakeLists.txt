@@ -26,7 +26,7 @@ if(MSVC)
     endif()
 endif()
 
-add_library(${DLL_OUTPUT_NAME} SHARED dinput8Proxy.cpp dinput8.def logger.cpp)
+add_library(${DLL_OUTPUT_NAME} SHARED dinput8Proxy.cpp dinput8.def squall360.cpp logger.cpp)
 
 target_compile_definitions(${DLL_OUTPUT_NAME} PRIVATE DIRECTINPUT_VERSION=0x0800)
 

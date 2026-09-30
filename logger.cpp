@@ -1,3 +1,7 @@
+// FF8R-Analog360 - Restores 360° analog movement in FINAL FANTASY VIII Remastered
+// Copyright (C) 2026 Quentin MOREL
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "logger.h"
 
 #include <windows.h>
@@ -23,7 +27,7 @@ void logInit(const char* consoleName, const char* prefix)
         return;
     }
 
-    SetConsoleTitleA(consoleName);
+    SetConsoleTitleA((consoleName != nullptr) ? consoleName : "Mod Debug Console");
 
     if (HWND console = GetConsoleWindow())
     {

@@ -1,4 +1,10 @@
+// FF8R-Analog360 - Restores 360° analog movement in FINAL FANTASY VIII Remastered
+// Copyright (C) 2026 Quentin MOREL
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "logger.h"
+
+#include "squall360.h"
 
 #include <windows.h>
 #include <dinput.h>
@@ -68,15 +74,16 @@ LPCDIDATAFORMAT WINAPI GetdfDIJoystick()
 
 static bool isGameProcess()
 {
-    return GetModuleHandleA(APP_NAME_EFIGS) != nullptr || GetModuleHandleA(APP_NAME_JP) != nullptr;
+    return GetModuleHandleA(APP_NAME_EFIGS) != nullptr /*|| GetModuleHandleA(APP_NAME_JP) != nullptr*/;
 }
 
-static DWORD WINAPI threadInitialisationMod(LPVOID  /*param*/)
+static DWORD WINAPI threadInitialisationMod(LPVOID /*param*/)
 {
     logInit(CONSOLE_NAME, CONSOLE_PREFIX_MESSAGE);
 
     logPrint("FFVIII-Analog360 - Started");
-    logPrint("FFVIII-Analog360 - Patched");
+
+    tryInstallSquall360Patch(APP_NAME_EFIGS);
 
     return 0;
 }
