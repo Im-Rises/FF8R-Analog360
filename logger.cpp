@@ -15,7 +15,7 @@ char g_prefix[PREFIX_SIZE]{};
 
 void logInit(const char* consoleName, const char* prefix)
 {
-    lstrcpynA(g_prefix, prefix, PREFIX_SIZE);
+    lstrcpynA(g_prefix, (prefix != nullptr) ? prefix : "", PREFIX_SIZE);
 
 #ifndef NDEBUG
     if (!AllocConsole())

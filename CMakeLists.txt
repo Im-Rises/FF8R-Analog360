@@ -28,6 +28,8 @@ endif()
 
 add_library(${DLL_OUTPUT_NAME} SHARED dinput8Proxy.cpp dinput8.def logger.cpp)
 
+target_compile_definitions(${DLL_OUTPUT_NAME} PRIVATE DIRECTINPUT_VERSION=0x0800)
+
 if (MINGW)
     target_link_options(${DLL_OUTPUT_NAME} PRIVATE -static -Wl,--enable-stdcall-fixup)
 endif ()

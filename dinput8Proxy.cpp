@@ -1,7 +1,6 @@
 #include "logger.h"
 
 #include <windows.h>
-#define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 
 static HMODULE g_realDll = nullptr;
