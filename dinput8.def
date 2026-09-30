@@ -5,3 +5,4 @@ EXPORTS
     DllGetClassObject   @3 PRIVATE
     DllRegisterServer   @4 PRIVATE
     DllUnregisterServer @5 PRIVATE
+    GetdfDIJoystick     @6 PRIVATE

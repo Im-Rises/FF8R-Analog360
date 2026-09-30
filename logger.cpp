@@ -15,7 +15,6 @@ char g_prefix[PREFIX_SIZE]{};
 
 void logInit(const char* consoleName, const char* prefix)
 {
-    // Copie du préfixe : on ne garde pas le pointeur de l'appelant
     lstrcpynA(g_prefix, prefix, PREFIX_SIZE);
 
 #ifndef NDEBUG
@@ -32,6 +31,13 @@ void logInit(const char* consoleName, const char* prefix)
     }
 #else
     (void)consoleName;
+#endif
+}
+
+void logStop()
+{
+#ifndef NDEBUG
+    FreeConsole();
 #endif
 }
 

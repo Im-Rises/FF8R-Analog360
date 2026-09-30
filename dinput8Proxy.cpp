@@ -1,7 +1,8 @@
 #include "logger.h"
 
-#include <cstring>
 #include <windows.h>
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 
 static HMODULE g_realDll = nullptr;
 constexpr auto APP_NAME_EFIGS = "FFVIII_EFIGS.dll";
@@ -23,60 +24,92 @@ static FARPROC getRealFunction(const char* name)
 
 extern "C"
 {
+HRESULT WINAPI DirectInput8Create(HINSTANCE hinst, DWORD ver, REFIID riid, LPVOID* out, LPUNKNOWN outer)
+{
+    using Fn = HRESULT(WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("DirectInput8Create"));
+    return fn ? fn(hinst, ver, riid, out, outer) : E_FAIL;
+}
 
-    HRESULT WINAPI DirectInput8Create(HINSTANCE hinst, DWORD ver, REFIID riid, LPVOID* out, LPUNKNOWN outer)
-    {
-        using Fn = HRESULT(WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
-        auto fn = (Fn)getRealFunction("DirectInput8Create");
-        return fn ? fn(hinst, ver, riid, out, outer) : E_FAIL;
-    }
+HRESULT WINAPI DllCanUnloadNow()
+{
+    using Fn = HRESULT(WINAPI*)();
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllCanUnloadNow"));
+    return fn ? fn() : S_FALSE;
+}
 
-    HRESULT WINAPI DllCanUnloadNow()
-    {
-        using Fn = HRESULT(WINAPI*)();
-        auto fn = (Fn)getRealFunction("DllCanUnloadNow");
-        return fn ? fn() : S_FALSE;
-    }
+HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID riid, LPVOID* out)
+{
+    using Fn = HRESULT(WINAPI*)(REFCLSID, REFIID, LPVOID*);
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllGetClassObject"));
+    return fn ? fn(clsid, riid, out) : E_FAIL;
+}
 
-    HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID riid, LPVOID* out)
-    {
-        using Fn = HRESULT(WINAPI*)(REFCLSID, REFIID, LPVOID*);
-        auto fn = (Fn)getRealFunction("DllGetClassObject");
-        return fn ? fn(clsid, riid, out) : E_FAIL;
-    }
+HRESULT WINAPI DllRegisterServer()
+{
+    using Fn = HRESULT(WINAPI*)();
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllRegisterServer"));
+    return fn ? fn() : E_FAIL;
+}
 
-    HRESULT WINAPI DllRegisterServer()
-    {
-        using Fn = HRESULT(WINAPI*)();
-        auto fn = (Fn)getRealFunction("DllRegisterServer");
-        return fn ? fn() : E_FAIL;
-    }
+HRESULT WINAPI DllUnregisterServer()
+{
+    using Fn = HRESULT(WINAPI*)();
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllUnregisterServer"));
+    return fn ? fn() : E_FAIL;
+}
 
-    HRESULT WINAPI DllUnregisterServer()
-    {
-        using Fn = HRESULT(WINAPI*)();
-        auto fn = (Fn)getRealFunction("DllUnregisterServer");
-        return fn ? fn() : E_FAIL;
-    }
+LPCDIDATAFORMAT WINAPI GetdfDIJoystick()
+{
+    using Fn = LPCDIDATAFORMAT(WINAPI*)();
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("GetdfDIJoystick"));
+    return fn ? fn() : nullptr;
+}
 }
 
 static bool isGameProcess()
 {
-    return GetModuleHandleA(APP_NAME_EFIGS) != nullptr
-        || GetModuleHandleA(APP_NAME_JP) != nullptr;
+    return GetModuleHandleA(APP_NAME_EFIGS) != nullptr || GetModuleHandleA(APP_NAME_JP) != nullptr;
 }
 
-BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID)
+static DWORD WINAPI threadInitialisationMod(LPVOID  /*param*/)
 {
-    if (reason == DLL_PROCESS_ATTACH)
+    logInit(CONSOLE_NAME, CONSOLE_PREFIX_MESSAGE);
+
+    logPrint("FFVIII-Analog360 - Started");
+    logPrint("FFVIII-Analog360 - Patched");
+
+    return 0;
+}
+
+BOOL WINAPI DllMain(HINSTANCE /*inst*/, DWORD reason, LPVOID /*reserved*/)
+{
+    if (!isGameProcess())
     {
-        if (isGameProcess())
+        return TRUE;
+    }
+
+    switch (reason)
+    {
+        case DLL_PROCESS_ATTACH:
         {
-            logInit(CONSOLE_NAME, CONSOLE_PREFIX_MESSAGE);
+            if (HANDLE thread = CreateThread(nullptr, 0, threadInitialisationMod, nullptr, 0, nullptr))
+            {
+                CloseHandle(thread);
+            }
 
-            logPrint("FFVIII-Analog360 - Started");
+            break;
+        }
 
-            logPrint("FFVIII-Analog360 - Patched");
+        case DLL_PROCESS_DETACH:
+        {
+            logStop();
+
+            break;
+        }
+        default:
+        {
+            break;
         }
     }
 
