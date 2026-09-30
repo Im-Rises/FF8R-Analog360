@@ -12,7 +12,7 @@
 #include <xinput.h>
 
 static int g_lx = 0x80, g_ly = 0x80, g_rx = 0x80, g_ry = 0x80;
-static HMODULE g_gameModule = nullptr;
+// static HMODULE g_gameModule = nullptr;
 static uintptr_t g_gameBaseAddress = 0;
 
 // FUN_1031EB50 is the function to replace the calls to, it is the function normally called by the game to read joystick
@@ -50,12 +50,14 @@ static void pollPad()
 
 static bool isCallToGetAnalog(const uintptr_t callAddress)
 {
+    // Call address
     const auto* bytes = reinterpret_cast<const uint8_t*>(callAddress);
 
     // Call Opcode check
     if (bytes[0] != 0xE8)
     {
-        logPrint("RVA 0x%06X: not a CALL (byte 0x%02X)", static_cast<unsigned>(callAddress - g_gameBaseAddress), bytes[0]);
+        logPrint("RVA 0x%06X: not a CALL (byte 0x%02X)", static_cast<unsigned>(callAddress - g_gameBaseAddress),
+                 bytes[0]);
         return false;
     }
 
@@ -72,6 +74,33 @@ static bool isCallToGetAnalog(const uintptr_t callAddress)
     return dest == g_gameBaseAddress + RVA_GET_ANALOG;
 }
 
+static bool patchCallToGetAnalog(const uintptr_t callAddress, const uintptr_t* hookAddress)
+{
+    // Call address
+    auto* bytes = reinterpret_cast<uint8_t*>(callAddress);
+
+    // Make the 5 bytes of the CALL writable
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(bytes, 5, PAGE_EXECUTE_READWRITE, &oldProtect))
+    {
+        return false;
+    }
+
+    // A CALL rel32 jumps to: next instruction + relative offset
+    // So the new offset is: hookAddress - next instruction
+    const uintptr_t nextInstruction = callAddress + 5;
+    const auto hook = reinterpret_cast<uintptr_t>(hookAddress);
+    const auto newRelativeOffset = static_cast<int32_t>(hook - nextInstruction);
+
+    // Overwrite the 4 bytes of the offset (after the E8 opcode)
+    *reinterpret_cast<int32_t*>(bytes + 1) = newRelativeOffset;
+
+    // Restore the original protection and make sure the CPU sees the new code
+    VirtualProtect(bytes, 5, oldProtect, &oldProtect);
+    FlushInstructionCache(GetCurrentProcess(), bytes, 5);
+    return true;
+}
+
 bool tryInstallSquall360Patch(const char* appName)
 {
     HMODULE module = GetModuleHandleA(appName);
@@ -81,7 +110,7 @@ bool tryInstallSquall360Patch(const char* appName)
         return false;
     }
 
-    g_gameModule = module;
+    // g_gameModule = module;
     g_gameBaseAddress = reinterpret_cast<uintptr_t>(module);
 
     logPrint("FFVIII game module found");
@@ -99,6 +128,12 @@ bool tryInstallSquall360Patch(const char* appName)
     }
 
     logPrint("All call sites verified. Patching...");
+
+    std::for_each(std::begin(EFIGS_RVA_CALL_SITES), std::end(EFIGS_RVA_CALL_SITES),
+                  [](const uint32_t rva)
+                  {
+                      // patchCallToGetAnalog(g_gameBaseAddress + rva, );
+                  });
 
     return true;
 }

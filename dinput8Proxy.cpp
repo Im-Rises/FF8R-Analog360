@@ -83,7 +83,14 @@ static DWORD WINAPI threadInitialisationMod(LPVOID /*param*/)
 
     logPrint("FFVIII-Analog360 - Started");
 
-    tryInstallSquall360Patch(APP_NAME_EFIGS);
+    if (tryInstallSquall360Patch(APP_NAME_EFIGS))
+    {
+        logPrint("Success patching");
+    }
+    else
+    {
+        logPrint("Failure patching");
+    }
 
     return 0;
 }
