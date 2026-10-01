@@ -18,6 +18,8 @@ The Remastered has the same problem, the same code still exists, but it was tran
 
 This project is a port of the patch from the 2013 version to the remastered.
 
+> **Note:** The patch is not compatible with MaKiPL's FF8_demaster. We use the same file to patch.
+
 ## The fix
 
 The fix follows the same logic as the 2013 FFNx patch. I hook new functions to the original game analog reading
@@ -42,6 +44,7 @@ You'll have to put the `dinput8.dll` file in the game root folder.
 - [x] Inject the new analog function for field movements
 - [x] Inject the new analog function for world map movements
 - [x] Implement the fix for JP version
+- [ ] Make it compatible with MaKiPL's FF8_demaster
 
 ## Contributors
 
