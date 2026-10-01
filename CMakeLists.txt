@@ -12,7 +12,7 @@ if (NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
     )
 endif ()
 
-set(DLL_OUTPUT_NAME dinput8)
+set(DLL_OUTPUT_NAME "xinput9_1_0")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,14 +26,10 @@ if (MSVC)
     endif ()
 endif ()
 
-add_library(${DLL_OUTPUT_NAME} SHARED dinput8Proxy.cpp dinput8.def squall360.cpp logger.cpp)
-
-target_compile_definitions(${DLL_OUTPUT_NAME} PRIVATE DIRECTINPUT_VERSION=0x0800)
+add_library(${DLL_OUTPUT_NAME} SHARED XInput9_1_0Proxy.cpp XInput9_1_0.def squall360.cpp logger.cpp)
 
 if (MINGW)
     target_link_options(${DLL_OUTPUT_NAME} PRIVATE -static -Wl,--enable-stdcall-fixup)
 endif ()
 
 set_target_properties(${DLL_OUTPUT_NAME} PROPERTIES PREFIX "")
-
-target_link_libraries(${DLL_OUTPUT_NAME} PRIVATE xinput9_1_0)

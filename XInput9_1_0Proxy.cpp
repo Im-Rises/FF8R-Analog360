@@ -7,11 +7,18 @@
 #include "squall360.h"
 
 #include <windows.h>
-#include <dinput.h>
+#include <xinput.h>
+
+// The Windows SDK declares the XInput functions noexcept (WIN_NOEXCEPT), MinGW headers don't.
+// Our definitions must match the header declarations exactly.
+#ifndef WIN_NOEXCEPT
+#define WIN_NOEXCEPT
+#endif
 
 static HMODULE g_realDll = nullptr;
 constexpr auto CONSOLE_NAME = "FF8R-Analog360 - debug";
 constexpr auto CONSOLE_PREFIX_MESSAGE = "[squall360]";
+constexpr auto REAL_DLL_NAME = "\\XInput9_1_0.dll";
 
 static FARPROC getRealFunction(const char* name)
 {
@@ -19,7 +26,7 @@ static FARPROC getRealFunction(const char* name)
     {
         char path[MAX_PATH];
         GetSystemDirectoryA(path, MAX_PATH);
-        lstrcatA(path, "\\dinput8.dll");
+        lstrcatA(path, REAL_DLL_NAME);
         g_realDll = LoadLibraryA(path);
     }
     return (g_realDll != nullptr) ? GetProcAddress(g_realDll, name) : nullptr;
@@ -27,46 +34,32 @@ static FARPROC getRealFunction(const char* name)
 
 extern "C"
 {
-HRESULT WINAPI DirectInput8Create(HINSTANCE hinst, DWORD ver, REFIID riid, LPVOID* out, LPUNKNOWN outer)
+DWORD WINAPI XInputGetState(DWORD userIndex, XINPUT_STATE* state) WIN_NOEXCEPT
 {
-    using Fn = HRESULT(WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
-    const auto fn = reinterpret_cast<Fn>(getRealFunction("DirectInput8Create"));
-    return fn ? fn(hinst, ver, riid, out, outer) : E_FAIL;
+    using Fn = DWORD(WINAPI*)(DWORD, XINPUT_STATE*);
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("XInputGetState"));
+    return fn ? fn(userIndex, state) : ERROR_DEVICE_NOT_CONNECTED;
 }
 
-HRESULT WINAPI DllCanUnloadNow()
+DWORD WINAPI XInputSetState(DWORD userIndex, XINPUT_VIBRATION* vibration) WIN_NOEXCEPT
 {
-    using Fn = HRESULT(WINAPI*)();
-    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllCanUnloadNow"));
-    return fn ? fn() : S_FALSE;
+    using Fn = DWORD(WINAPI*)(DWORD, XINPUT_VIBRATION*);
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("XInputSetState"));
+    return fn ? fn(userIndex, vibration) : ERROR_DEVICE_NOT_CONNECTED;
 }
 
-HRESULT WINAPI DllGetClassObject(REFCLSID clsid, REFIID riid, LPVOID* out)
+DWORD WINAPI XInputGetCapabilities(DWORD userIndex, DWORD flags, XINPUT_CAPABILITIES* capabilities) WIN_NOEXCEPT
 {
-    using Fn = HRESULT(WINAPI*)(REFCLSID, REFIID, LPVOID*);
-    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllGetClassObject"));
-    return fn ? fn(clsid, riid, out) : E_FAIL;
+    using Fn = DWORD(WINAPI*)(DWORD, DWORD, XINPUT_CAPABILITIES*);
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("XInputGetCapabilities"));
+    return fn ? fn(userIndex, flags, capabilities) : ERROR_DEVICE_NOT_CONNECTED;
 }
 
-HRESULT WINAPI DllRegisterServer()
+DWORD WINAPI XInputGetDSoundAudioDeviceGuids(DWORD userIndex, GUID* renderGuid, GUID* captureGuid)
 {
-    using Fn = HRESULT(WINAPI*)();
-    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllRegisterServer"));
-    return fn ? fn() : E_FAIL;
-}
-
-HRESULT WINAPI DllUnregisterServer()
-{
-    using Fn = HRESULT(WINAPI*)();
-    const auto fn = reinterpret_cast<Fn>(getRealFunction("DllUnregisterServer"));
-    return fn ? fn() : E_FAIL;
-}
-
-LPCDIDATAFORMAT WINAPI GetdfDIJoystick()
-{
-    using Fn = LPCDIDATAFORMAT(WINAPI*)();
-    const auto fn = reinterpret_cast<Fn>(getRealFunction("GetdfDIJoystick"));
-    return fn ? fn() : nullptr;
+    using Fn = DWORD(WINAPI*)(DWORD, GUID*, GUID*);
+    const auto fn = reinterpret_cast<Fn>(getRealFunction("XInputGetDSoundAudioDeviceGuids"));
+    return fn ? fn(userIndex, renderGuid, captureGuid) : ERROR_DEVICE_NOT_CONNECTED;
 }
 }
 

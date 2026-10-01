@@ -23,6 +23,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/Release/dinput8.dll
+            build/Release/xinput9_1_0.dll
             LICENSE
           generate_release_notes: true

@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
   workflow_dispatch:
 
@@ -26,15 +26,15 @@ jobs:
       - name: Check that the DLL has no VC++ runtime dependency
         shell: pwsh
         run: |
-          $deps = dumpbin /dependents build\Release\dinput8.dll | Out-String
+          $deps = dumpbin /dependents build\Release\xinput9_1_0.dll | Out-String
           Write-Output $deps
           if ($deps -match 'VCRUNTIME|MSVCP') {
-            Write-Error "dinput8.dll depends on the VC++ runtime: static CRT is not applied"
+            Write-Error "xinput9_1_0.dll depends on the VC++ runtime: static CRT is not applied"
             exit 1
           }
 
       - name: Upload DLL
         uses: actions/upload-artifact@v4
         with:
-          name: dinput8-x86-release
-          path: build/Release/dinput8.dll
+          name: xinput9_1_0-x86-release
+          path: build/Release/xinput9_1_0.dll

@@ -9,9 +9,8 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-
-#include <windows.h>
-#include <xinput.h>
+#include <Windows.h>
+#include <Xinput.h>
 
 struct GameVersionOffsets
 {
