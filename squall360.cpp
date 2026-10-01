@@ -18,7 +18,7 @@ static constexpr uint32_t RVA_GET_ANALOG = 0x31EB50; // FUN_1031EB50
 // Addresses of the Calls to FUN_1031EB50 to replace
 static constexpr uint32_t EFIGS_RVA_CALL_SITES[] = {
     /*
-     * The RVA below call are calls to FUN_1031EB50, the first call check if we use analog values and the others
+     * The RVAs below are calls to FUN_1031EB50, the first call check if we use analog values and the others
      * read the x and y values of the joysticks.
      */
 
@@ -33,8 +33,27 @@ static constexpr uint32_t EFIGS_RVA_CALL_SITES[] = {
     0x929944, // rY (type 1)
 };
 
-// RVA of DAT_116cb5e0
+// RVA of the first Call FUN_1031EB50 in the world map function FUN_10929600
+static constexpr uint32_t RVA_WM_FIRST_CALL_SITE = 0x929854;
+
+// RVA of the pointer to the emulated stack buffer
 static constexpr uint32_t RVA_EMU_STACK_PTR = 0x16CB5E0;
+
+// Table of 4 KB pages mapping the emulated 2013 memory (DAT_1188edd0)
+static constexpr uint32_t RVA_EMU_PAGES = 0x188EDD0;
+
+/*
+ * Emulated addresses (2013 addresses, not RVAs!)
+ * These are absolute addresses but from the 2013 version. The remastered simulate the addresses of the 2013 and still
+ * use the real addresses that were used from the 2013 version.
+ *
+ */
+// Array of the inputs values from the current and previous frame (depending on the index).
+static constexpr uint32_t EMU_WM_PAD_BUFFERS = 0x0203FDE8;
+// The game stores two frame of button and toggle between them to always
+// store the values of the buttons from the previous frame. The index help us identify which buffer (0 or 1) from
+// EMU_WM_PAD_BUFFERS we should read
+static constexpr uint32_t EMU_WM_PAD_BUFFER_INDEX = 0x020409BC;
 
 static uintptr_t g_gameBaseAddress = 0;
 
@@ -48,8 +67,6 @@ static void pollPad()
     {
         g_lx = g_ly = g_rx = g_ry = 0x80;
 
-        // logPrint("Error: Cannot get XInput State");
-
         return;
     }
 
@@ -58,7 +75,15 @@ static void pollPad()
     g_rx = std::clamp(0x80 + (xstate.Gamepad.sThumbRX >> 8), 0x00, 0xFF);
     g_ry = std::clamp(0x80 - (xstate.Gamepad.sThumbRY >> 8), 0x00, 0xFF);
 
-    // Handle dead zone like FFNx
+    // Circular dead zone of radius 40 (same as FFNx): small stick movements are treated as "centered"
+    if (((g_lx - 0x80) * (g_lx - 0x80)) + ((g_ly - 0x80) * (g_ly - 0x80)) < 1600)
+    {
+        g_lx = g_ly = 0x80;
+    }
+    if (((g_rx - 0x80) * (g_rx - 0x80)) + ((g_ry - 0x80) * (g_ry - 0x80)) < 1600)
+    {
+        g_rx = g_ry = 0x80;
+    }
 }
 
 static bool isCallToGetAnalog(const uintptr_t callAddress)
@@ -121,8 +146,6 @@ static void __cdecl analogHook(uint32_t* ctx)
     const uint32_t esp = ctx[0xB];
     const uint32_t type = *reinterpret_cast<const uint32_t*>(stack + esp + 8);
 
-    pollPad();
-
     switch (type)
     {
         case 0:
@@ -132,6 +155,9 @@ static void __cdecl analogHook(uint32_t* ctx)
             ctx[0x0] = g_ry;
             break;
         case 2:
+            // type 2 is always the first value to be read for field and world map.
+            // We only read the Xinput values one time this way.
+            pollPad();
             ctx[0x0] = g_lx;
             break;
         case 3:
@@ -142,10 +168,53 @@ static void __cdecl analogHook(uint32_t* ctx)
             break;
     }
 
-    // Pop the fake stack pushed by the caller (emulate the RET), like the original function does
+    // Pop the fake return slot pushed by the caller (emulates the RET), like the original function does
+    // like the original function does
     ctx[0xB] += 4;
+}
 
-    // logPrint("Reading type {} - {}", type, ctx[0x0]);
+static uint8_t* convertEmulatedAddressToRealAddress(const uint32_t emuAddress)
+{
+    /*
+     * This function is a bit tricky on what it's doing.
+     * The Remastered emulate the memory of the 2013 version, so it store in a page a lot of data, including our inputs.
+     * This function converts an emulated address from the 2013 version like EMU_WM_PAD_BUFFERS and
+     * EMU_WM_PAD_BUFFER_INDEX to a real address in the memory of the remastered.
+     */
+
+    auto* const* pages = reinterpret_cast<uint8_t* const*>(g_gameBaseAddress + RVA_EMU_PAGES);
+    uint8_t* page = pages[emuAddress >> 12];
+    return page != nullptr ? page + (emuAddress & 0xFFF) : nullptr;
+}
+
+static void __cdecl analogHookWorldMap(uint32_t* ctx)
+{
+    analogHook(ctx); // Normal work we fetch the analog values.
+
+    if (g_lx == 0x80 && g_ly == 0x80)
+    {
+        return; // joystick not used, we use the d-pad values.
+    }
+
+    // We have analog values, so we reset the D-Pad values to not have any conflicts.
+
+    // We get the index of the frame inputs we're on
+    const auto* index = reinterpret_cast<const int16_t*>(convertEmulatedAddressToRealAddress(EMU_WM_PAD_BUFFER_INDEX));
+
+    // Protection, index should always be 0 or 1
+    if (index == nullptr || (*index != 0 && *index != 1))
+    {
+        return;
+    }
+
+    // We get the pointer to the "current frame" input buffer
+    auto* buttonsState =
+        reinterpret_cast<uint32_t*>(convertEmulatedAddressToRealAddress(EMU_WM_PAD_BUFFERS + (*index * 4)));
+
+    if (buttonsState != nullptr)
+    {
+        *buttonsState &= 0x0FFF; // clear the 4 D-pad bits (0xF000)
+    }
 }
 
 bool tryInstallSquall360Patch(const char* appName)
@@ -175,9 +244,14 @@ bool tryInstallSquall360Patch(const char* appName)
 
     logPrint("All call sites verified. Patching...");
 
-    const auto hookAddress = reinterpret_cast<uintptr_t>(&analogHook);
     for (const uint32_t rva : EFIGS_RVA_CALL_SITES)
     {
+        // Selection of the hook function to inject.
+        // For World Map the analog function is in conflict with the D-Pad. We need to reset the D-Pad values if
+        // we use the joystick. (Same logic as FFNx mod)
+        const uintptr_t hookAddress = (rva == RVA_WM_FIRST_CALL_SITE) ? reinterpret_cast<uintptr_t>(&analogHookWorldMap)
+                                                                      : reinterpret_cast<uintptr_t>(&analogHook);
+
         if (!patchCallToGetAnalog(g_gameBaseAddress + rva, hookAddress))
         {
             logPrint("Error: failed to patch RVA 0x%06X", static_cast<unsigned>(rva));
