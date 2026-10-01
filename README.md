@@ -47,6 +47,17 @@ replacing it may disable GOG's extra controller support.
 - GOG: works (replaces the GOG.com Input wrapper, see Installation)
 - Compatible with MaKiPL's [FF8_demaster](https://github.com/MaKiPL/FF8_demaster)
 
+## Controllers supported
+
+The mod reads the analog sticks through XInput (Xbox controllers).
+
+- **Xbox controllers:** work out of the box.
+- **PlayStation (PS4/PS5) and other controllers:** the game itself still works (buttons, D-pad), but the mod
+  can't read their sticks yet, so you only get the original 8-direction movement.
+
+A temporary solution for PS4 controllers is to use DS4Windows, which emulates an Xbox controller or SteamInput.
+Native support for PlayStation and other controllers is planned for the next version.
+
 ## Roadmap
 
 - [x] Create a dll
@@ -57,6 +68,7 @@ replacing it may disable GOG's extra controller support.
 - [x] Implement the fix for JP version
 - [x] Make it compatible with MaKiPL's FF8_demaster
 - [ ] Check what the GOG custom xinput9_1_0.dll does exaclty (I tested it worked but it may disable some features)
+- [ ] Fix for the PS4 controllers, the mod isn't working with them
 
 ## Contributors
 
