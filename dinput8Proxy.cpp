@@ -90,15 +90,15 @@ static DWORD WINAPI threadInitialisationMod(LPVOID /*param*/)
 
 BOOL WINAPI DllMain(HINSTANCE /*inst*/, DWORD reason, LPVOID /*reserved*/)
 {
-    if (!(isSupportedGameModuleLoaded()))
-    {
-        return TRUE;
-    }
-
     switch (reason)
     {
         case DLL_PROCESS_ATTACH:
         {
+            if (!isSupportedGameModuleLoaded())
+            {
+                break; // launcher or another process: do nothing
+            }
+
             if (HANDLE thread = CreateThread(nullptr, 0, threadInitialisationMod, nullptr, 0, nullptr))
             {
                 CloseHandle(thread);
