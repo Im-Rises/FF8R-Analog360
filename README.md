@@ -3,6 +3,7 @@
 A mod for FFVIII Remastered that enables full 360° analog movement, based on FFNx’s Analog 360° patch.
 
 [![Build](https://github.com/Im-Rises/FF8R-Analog360/actions/workflows/build.yml/badge.svg)](https://github.com/Im-Rises/FF8R-Analog360/actions/workflows/build.yml)
+[![Release](https://github.com/Im-Rises/FF8R-Analog360/actions/workflows/release.yml/badge.svg)](https://github.com/Im-Rises/FF8R-Analog360/actions/workflows/release.yml)
 
 ## Context
 
@@ -35,16 +36,12 @@ You'll have to put the `dinput8.dll` file in the game root folder.
 
 ## Roadmap
 
-- [x] Added base project files
 - [x] Create a dll
 - [x] Make it load the real dinput8.dll
 - [x] Verify the call sites in FFVIII_EFIGS.dll
-- [x] Implement the new analog function
-- [x] Inject the new analog function with the custom dinput8.dll
-- [x] Test the game...
-- [ ] Add world support
-- [ ] Clean the hook function
-- [ ] Implement the fix for JP version
+- [x] Inject the new analog function for field movements
+- [x] Inject the new analog function for world map movements
+- [x] Implement the fix for JP version
 
 ## Contributors
 
@@ -64,7 +61,7 @@ Quentin MOREL:
 
 - [FFVIII Demastered](https://github.com/MaKiPL/FF8_demaster) — another FFVIII Remastered mod, useful reference
 - [Ghidra](https://github.com/NationalSecurityAgency/ghidra) — reverse engineering tool used to analyse
-  `FFVIII_EFIGS.dll`
+  `FFVIII_EFIGS.dll` and `FFVIII_EFIGS_JP.dll`
 - [x64dbg](https://github.com/x64dbg/x64dbg) (x32dbg) — debugger used to inspect the game at runtime
 
 ## License

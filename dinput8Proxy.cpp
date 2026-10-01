@@ -10,8 +10,6 @@
 #include <dinput.h>
 
 static HMODULE g_realDll = nullptr;
-constexpr auto APP_NAME_EFIGS = "FFVIII_EFIGS.dll";
-constexpr auto APP_NAME_JP = "FFVIII_JP.dll";
 constexpr auto CONSOLE_NAME = "FF8R-Analog360 - debug";
 constexpr auto CONSOLE_PREFIX_MESSAGE = "[squall360]";
 
@@ -72,18 +70,13 @@ LPCDIDATAFORMAT WINAPI GetdfDIJoystick()
 }
 }
 
-static bool isGameProcess()
-{
-    return GetModuleHandleA(APP_NAME_EFIGS) != nullptr /*|| GetModuleHandleA(APP_NAME_JP) != nullptr*/;
-}
-
 static DWORD WINAPI threadInitialisationMod(LPVOID /*param*/)
 {
     logInit(CONSOLE_NAME, CONSOLE_PREFIX_MESSAGE);
 
     logPrint("FFVIII-Analog360 - Started");
 
-    if (tryInstallSquall360Patch(APP_NAME_EFIGS))
+    if (tryInstallSquall360Patch())
     {
         logPrint("Success patching");
     }
@@ -97,7 +90,7 @@ static DWORD WINAPI threadInitialisationMod(LPVOID /*param*/)
 
 BOOL WINAPI DllMain(HINSTANCE /*inst*/, DWORD reason, LPVOID /*reserved*/)
 {
-    if (!isGameProcess())
+    if (!(isSupportedGameModuleLoaded()))
     {
         return TRUE;
     }

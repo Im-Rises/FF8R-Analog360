@@ -10,51 +10,90 @@
 #include <cstdint>
 #include <windows.h>
 #include <xinput.h>
+#include <array>
 
-// FUN_1031EB50 is the function to replace the calls to, it is the function normally called by the game to read joystick
-// values.
-static constexpr uint32_t RVA_GET_ANALOG = 0x31EB50; // FUN_1031EB50
+struct GameVersionOffsets
+{
+    // The name of the module to patch, it is used to get the base address of the module in memory.
+    const char* moduleName;
 
-// Addresses of the Calls to FUN_1031EB50 to replace
-static constexpr uint32_t EFIGS_RVA_CALL_SITES[] = {
+    // The function to replace the calls to, it is the function normally called by the game
+    // to read joystick values.
+    uint32_t rvaGetAnalog;
+    // RVA of the pointer to the emulated stack buffer
+    uint32_t rvaEmuStackPtr;
+    // Table of 4 KB pages mapping the emulated 2013 memory
+    uint32_t rvaEmuPages;
+    // RVA of the first Call function in the world map function
+    uint32_t rvaWorldMapFirstCallSite;
+
     /*
-     * The RVAs below are calls to FUN_1031EB50, the first call check if we use analog values and the others
-     * read the x and y values of the joysticks.
+     * Emulated addresses (2013 addresses, not RVAs!)
+     * These are absolute addresses but from the 2013 version. The remastered simulate the addresses of the 2013 and
+     * still use the real addresses that were used from the 2013 version. We use it to get the d-pad values from the
+     * world map function and reset them if we use the joystick to avoid conflicts.
      */
+    // Array of the inputs values from the current and previous frame (depending on the index).
+    uint32_t emuWorldMapPadBuffers;
+    // The game stores two frame of button and toggle between them to always
+    // store the values of the buttons from the previous frame. The index help us identify which buffer (0 or 1) from
+    // emuWorldMapPadBuffers we should read
+    uint32_t emuWorldMapPadBufferIndex;
 
-    // Field function FUN_10290770
-    0x291659, // analog test check if different of -1 (type 2)
-    0x2918CB, // lX (type 2)
-    0x291927, // lY (type 3)
-    // World map (FUN_10929600)
-    0x929854, // lX (type 2)
-    0x9298A3, // lY (type 3)
-    0x9298F2, // rX (type 0)
-    0x929944, // rY (type 1)
+    /*
+     * The RVAs Call Sites are calls to the analog function (rvaGetAnalog) to get the value of the joystick
+     */
+    std::array<uint32_t, 7> rvaCallSites;
 };
 
-// RVA of the first Call FUN_1031EB50 in the world map function FUN_10929600
-static constexpr uint32_t RVA_WM_FIRST_CALL_SITE = 0x929854;
+static constexpr GameVersionOffsets EFIGS_OFFSETS = {
+    .moduleName = APP_NAME_EFIGS,
+    .rvaGetAnalog = 0x31EB50,
+    .rvaEmuStackPtr = 0x16CB5E0,
+    .rvaEmuPages = 0x188EDD0,
+    .rvaWorldMapFirstCallSite = 0x929854,
+    .emuWorldMapPadBuffers = 0x0203FDE8,
+    .emuWorldMapPadBufferIndex = 0x020409BC,
+    .rvaCallSites =
+        {
+            // Field function FUN_10290770
+            0x291659, // analog test (type 2)
+            0x2918CB, // lX (type 2)
+            0x291927, // lY (type 3)
 
-// RVA of the pointer to the emulated stack buffer
-static constexpr uint32_t RVA_EMU_STACK_PTR = 0x16CB5E0;
+            // World map (FUN_10929600)
+            0x929854, // lX (type 2)
+            0x9298A3, // lY (type 3)
+            0x9298F2, // rX (type 0)
+            0x929944, // rY (type 1)
+        },
+};
 
-// Table of 4 KB pages mapping the emulated 2013 memory (DAT_1188edd0)
-static constexpr uint32_t RVA_EMU_PAGES = 0x188EDD0;
+// Thanks to Ghidra Version Tracking!
+static constexpr GameVersionOffsets JP_OFFSETS = {
+    .moduleName = APP_NAME_JP,
+    .rvaGetAnalog = 0x333550,
+    .rvaEmuStackPtr = 0x16DB880,
+    .rvaEmuPages = 0x18A09A0,
+    .rvaWorldMapFirstCallSite = 0x962CED,
+    .emuWorldMapPadBuffers = 0x02543EC8,
+    .emuWorldMapPadBufferIndex = 0x02544A9C,
+    .rvaCallSites =
+        {
+            // Field (FUN_1029c400)
+            0x29D1B0, // analog test (type 2)
+            0x29D43F, // lX (type 2)
+            0x29D49B, // lY (type 3)
 
-/*
- * Emulated addresses (2013 addresses, not RVAs!)
- * These are absolute addresses but from the 2013 version. The remastered simulate the addresses of the 2013 and still
- * use the real addresses that were used from the 2013 version.
- *
- */
-// Array of the inputs values from the current and previous frame (depending on the index).
-static constexpr uint32_t EMU_WM_PAD_BUFFERS = 0x0203FDE8;
-// The game stores two frame of button and toggle between them to always
-// store the values of the buttons from the previous frame. The index help us identify which buffer (0 or 1) from
-// EMU_WM_PAD_BUFFERS we should read
-static constexpr uint32_t EMU_WM_PAD_BUFFER_INDEX = 0x020409BC;
+            // World map (FUN_10962ab0), port 0
+            0x962CED, // lX (type 2)
+            0x962D3C, // lY (type 3)
+            0x962D8B, // rX (type 0)
+            0x962DDD, // rY (type 1)
+        },
+};
 
+static GameVersionOffsets g_offsets = {};
 static uintptr_t g_gameBaseAddress = 0;
 
 static int g_lx = 0x80, g_ly = 0x80, g_rx = 0x80, g_ry = 0x80;
@@ -108,8 +147,8 @@ static bool isCallToGetAnalog(const uintptr_t callAddress)
     logPrint("RVA 0x%06X: CALL -> RVA 0x%06X", static_cast<unsigned>(callAddress - g_gameBaseAddress),
              static_cast<unsigned>(dest - g_gameBaseAddress));
 
-    // The Call address should be FUN_1031eb50
-    return dest == g_gameBaseAddress + RVA_GET_ANALOG;
+    // The Call address should be FUN_1031eb50 for EFIGS and FUN_10333550 for JP
+    return dest == g_gameBaseAddress + g_offsets.rvaGetAnalog;
 }
 
 static bool patchCallToGetAnalog(const uintptr_t callAddress, const uintptr_t hookAddress)
@@ -138,11 +177,11 @@ static bool patchCallToGetAnalog(const uintptr_t callAddress, const uintptr_t ho
     return true;
 }
 
-// Function that will be used to replace FUN_1031EB50 (declared like in Ghidra)
+// Function that will be used to replace the CALL analog function of the game (declared like in Ghidra)
 static void __cdecl analogHook(uint32_t* ctx)
 {
     // Fetching the data from the emulated stack
-    const auto* stack = *reinterpret_cast<uint8_t**>(g_gameBaseAddress + RVA_EMU_STACK_PTR);
+    const auto* stack = *reinterpret_cast<uint8_t**>(g_gameBaseAddress + g_offsets.rvaEmuStackPtr);
     const uint32_t esp = ctx[0xB];
     const uint32_t type = *reinterpret_cast<const uint32_t*>(stack + esp + 8);
 
@@ -182,7 +221,7 @@ static uint8_t* convertEmulatedAddressToRealAddress(const uint32_t emuAddress)
      * EMU_WM_PAD_BUFFER_INDEX to a real address in the memory of the remastered.
      */
 
-    auto* const* pages = reinterpret_cast<uint8_t* const*>(g_gameBaseAddress + RVA_EMU_PAGES);
+    auto* const* pages = reinterpret_cast<uint8_t* const*>(g_gameBaseAddress + g_offsets.rvaEmuPages);
     uint8_t* page = pages[emuAddress >> 12];
     return page != nullptr ? page + (emuAddress & 0xFFF) : nullptr;
 }
@@ -199,7 +238,8 @@ static void __cdecl analogHookWorldMap(uint32_t* ctx)
     // We have analog values, so we reset the D-Pad values to not have any conflicts.
 
     // We get the index of the frame inputs we're on
-    const auto* index = reinterpret_cast<const int16_t*>(convertEmulatedAddressToRealAddress(EMU_WM_PAD_BUFFER_INDEX));
+    const auto* index =
+        reinterpret_cast<const int16_t*>(convertEmulatedAddressToRealAddress(g_offsets.emuWorldMapPadBufferIndex));
 
     // Protection, index should always be 0 or 1
     if (index == nullptr || (*index != 0 && *index != 1))
@@ -208,8 +248,8 @@ static void __cdecl analogHookWorldMap(uint32_t* ctx)
     }
 
     // We get the pointer to the "current frame" input buffer
-    auto* buttonsState =
-        reinterpret_cast<uint32_t*>(convertEmulatedAddressToRealAddress(EMU_WM_PAD_BUFFERS + (*index * 4)));
+    auto* buttonsState = reinterpret_cast<uint32_t*>(
+        convertEmulatedAddressToRealAddress(g_offsets.emuWorldMapPadBuffers + (*index * 4)));
 
     if (buttonsState != nullptr)
     {
@@ -217,9 +257,38 @@ static void __cdecl analogHookWorldMap(uint32_t* ctx)
     }
 }
 
-bool tryInstallSquall360Patch(const char* appName)
+static bool isGameProcess(const char* const appName)
 {
-    HMODULE module = GetModuleHandleA(appName);
+    return GetModuleHandleA(appName) != nullptr;
+}
+
+bool isSupportedGameModuleLoaded()
+{
+    return isGameProcess(APP_NAME_EFIGS) || isGameProcess(APP_NAME_JP);
+}
+
+bool tryInstallSquall360Patch()
+{
+    // Is EFIGS or JP version of the game running?
+
+    if (isGameProcess(APP_NAME_EFIGS))
+    {
+        logPrint("FFVIII EFIGS version detected");
+        g_offsets = EFIGS_OFFSETS;
+    }
+    else if (isGameProcess(APP_NAME_JP))
+    {
+        logPrint("FFVIII JP version detected");
+
+        g_offsets = JP_OFFSETS;
+    }
+    else
+    {
+        logPrint("Error: FFVIII game not found");
+        return false;
+    }
+
+    HMODULE module = GetModuleHandleA(g_offsets.moduleName);
     if (!module)
     {
         logPrint("Error: FFVIII game module not found");
@@ -233,7 +302,7 @@ bool tryInstallSquall360Patch(const char* appName)
     logPrint("Verifying if patching function is possible");
 
     const bool canPatchAddresses =
-        std::all_of(std::begin(EFIGS_RVA_CALL_SITES), std::end(EFIGS_RVA_CALL_SITES),
+        std::all_of(std::begin(g_offsets.rvaCallSites), std::end(g_offsets.rvaCallSites),
                     [](const uint32_t rva) -> bool { return isCallToGetAnalog(g_gameBaseAddress + rva); });
 
     if (!canPatchAddresses)
@@ -244,13 +313,14 @@ bool tryInstallSquall360Patch(const char* appName)
 
     logPrint("All call sites verified. Patching...");
 
-    for (const uint32_t rva : EFIGS_RVA_CALL_SITES)
+    for (const uint32_t rva : g_offsets.rvaCallSites)
     {
         // Selection of the hook function to inject.
         // For World Map the analog function is in conflict with the D-Pad. We need to reset the D-Pad values if
         // we use the joystick. (Same logic as FFNx mod)
-        const uintptr_t hookAddress = (rva == RVA_WM_FIRST_CALL_SITE) ? reinterpret_cast<uintptr_t>(&analogHookWorldMap)
-                                                                      : reinterpret_cast<uintptr_t>(&analogHook);
+        const uintptr_t hookAddress = (rva == g_offsets.rvaWorldMapFirstCallSite)
+                                          ? reinterpret_cast<uintptr_t>(&analogHookWorldMap)
+                                          : reinterpret_cast<uintptr_t>(&analogHook);
 
         if (!patchCallToGetAnalog(g_gameBaseAddress + rva, hookAddress))
         {
