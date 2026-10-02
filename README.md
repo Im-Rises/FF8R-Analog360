@@ -1,3 +1,4 @@
+
 # FF8R-Analog360
 
 A mod for FFVIII Remastered that enables full 360° analog movement, based on FFNx’s Analog 360° patch.
@@ -17,6 +18,12 @@ The Remastered has the same problem, the same code still exists, but it was tran
 `FFVIII_EFIGS.dll`.
 
 This project is a port of the patch from the 2013 version to the remastered.
+
+## Video
+
+| Field Movements | World Map Movement  | 
+|---|---|
+| https://github.com/user-attachments/assets/84eb7b02-71de-4e62-9bce-2d219519c960 | https://github.com/user-attachments/assets/ed29edca-222b-4fd0-ba21-dfc4a42d4702 |
 
 ## The fix
 
